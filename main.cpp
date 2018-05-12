@@ -4,6 +4,7 @@
  */
 #include <iostream>
 #include <GL/glut.h>
+#include <stdio.h>
 
 int width = 500;
 int height = 500;
@@ -15,6 +16,17 @@ typedef struct Point{
   GLfloat z;
 }Point;
 
+typedef struct Object{
+  int type;
+  // type = 0 : cube
+  // type = 1 : pyramid
+
+  int num_points;
+  Point *points;
+  Point center;
+}Object;
+
+Object obj;
 
 void drawCube(Point p[8]){
   glColor3f(0.0, 0.0, 0.0);
@@ -45,6 +57,22 @@ void drawCube(Point p[8]){
   glFlush();
 }
 
+void drawPiramid(Point p[5]){
+  glColor3f(0.0, 0.0, 0.0);
+  glBegin(GL_LINE_STRIP);
+    glVertex3f(p[0].x, p[0].y, p[0].z);
+    glVertex3f(p[1].x, p[1].y, p[1].z);
+    glVertex3f(p[3].x, p[3].y, p[3].z);
+    glVertex3f(p[2].x, p[2].y, p[2].z);
+    glVertex3f(p[0].x, p[0].y, p[0].z);
+    glVertex3f(p[4].x, p[4].y, p[4].z);
+    glVertex3f(p[1].x, p[1].y, p[1].z);
+    glVertex3f(p[3].x, p[3].y, p[3].z);
+    glVertex3f(p[4].x, p[4].y, p[4].z);
+    glVertex3f(p[2].x, p[2].y, p[2].z);
+  glEnd();
+  glFlush();
+}
 
 /**
  * @desc Desenha eixos de um sistema de coordenadas.
@@ -98,21 +126,55 @@ void drawWCAxes()
   drawAxes(basePoint, i, j, k);
 }
 
+void translate(Object *object, Point dest){
+  GLfloat dx, dy, dz;
+  dx = dest.x - object->center.x;
+  dy = dest.y - object->center.y;
+  dz = dest.z - object->center.z;
+  for(int i = 0; i < object->num_points; i++){
+    (*object).points[i].x += dx;
+    (*object).points[i].y += dy;
+    (*object).points[i].z += dz;
+  }
+  (*object).center.x += dx;
+  (*object).center.y += dy;
+  (*object).center.z += dz;
+  glClear(GL_COLOR_BUFFER_BIT);
+  drawWCAxes();
+  object->type == 0? drawCube(object->points) : drawPiramid(object->points);
+}
+
+void scale(Object *object, GLfloat factor){
+  int i;
+  Point p = object->center;
+  Point origin;
+  origin.x = origin.y = origin.z = 0;
+  translate(object, origin);
+  for(i = 0; i < object->num_points; i++){
+    (*object).points[i].x = object->points[i].x * factor;
+    (*object).points[i].y = object->points[i].y * factor;
+    (*object).points[i].z = object->points[i].z * factor;
+  }
+  translate(object, p);
+  glClear(GL_COLOR_BUFFER_BIT);
+  drawWCAxes();
+  object->type == 0? drawCube(object->points) : drawPiramid(object->points);
+}
+
+void rotate(Object *object, GLfloat angle){
+  
+}
+
 /**
  * @desc Fun��o de callback para desenho na tela.
  */
 void displayCallback()
 {
-  /** Limpa a janela APENAS uma vez */
   glClear(GL_COLOR_BUFFER_BIT);
-
   glColor3f(1.0f, 0.0f, 0.0f);
-  /** Desenha a janela mais a esquerda */
-  glViewport(0, 0, width/2, height);
   glLoadIdentity();
-  gluLookAt(3.0, 2.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+  gluLookAt(2.0, 2.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
   drawWCAxes();
-  glRotatef(-90.0, 1.0, 0.0, 0.0);
   glFlush();
 }
 
@@ -138,9 +200,9 @@ void mouseCallback(GLint button, GLint state, GLint x, GLint y){
     Point *p = (Point*)malloc(8*sizeof(Point));
     int i, x_sign = 1, y_sign = 1, z_sign = 1;
     for(i = 0; i < 8; i++){
-      p[i].x = 1 * x_sign;
-      p[i].y = 1 * y_sign;
-      p[i].z = 1 * z_sign;
+      p[i].x = 0.5 * x_sign;
+      p[i].y = 0.5 * y_sign;
+      p[i].z = 0.5 * z_sign;
       if(x_sign == 1){
         x_sign = -1;
         continue;
@@ -154,9 +216,56 @@ void mouseCallback(GLint button, GLint state, GLint x, GLint y){
         y_sign = 1;
       }
     }
+    obj.points = p;
+    obj.type = 0;
+    obj.num_points = 8;
+    obj.center.x = obj.center.y = obj.center.z = 0;
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawWCAxes();
     drawCube(p);
   }
+    else if(button == GLUT_RIGHT_BUTTON){
+      Point *p = (Point*)malloc(5 * sizeof(Point));
+      int i, x_sign = 1, y_sign = 1;
+      for(i = 0; i < 4; i++){
+      p[i].x = 0.5 * x_sign;
+      p[i].z = 0.5 * y_sign;
+      p[i].y = -0.5;
+      if(x_sign == 1){
+        x_sign = -1;
+        continue;
+      }else if(y_sign == 1){
+        y_sign = -1;
+        x_sign = 1;
+      }
+    }
+    p[4].x = p[4].z = 0;
+    p[4].y = 0.5;
+    obj.points = p;
+    obj.type = 1;
+    obj.num_points = 5;
+    obj.center.x = obj.center.y = obj.center.z = 0;
+    glClear(GL_COLOR_BUFFER_BIT);
+    drawWCAxes();
+    drawPiramid(p);
+  }
 
+}
+
+void keybordCallback(GLubyte key, GLint x, GLint y){
+  std::cout << "Key pressed: " << (GLint)key << "\n";
+  if((GLint)key == 43 && obj.type != -1)
+    scale(&obj, 1.1f);
+  else if((GLint)key == 45 && obj.type != -1)
+    scale(&obj, 1.0f/1.1f);
+  else if((GLint)key == 116 && obj.type != -1){
+    Point p;
+    p.x = (GLfloat)x/100.0f;
+    p.y = (GLfloat)y/100.0f;
+    p.z = 0;
+    printf("Translated to (%d,%d,0)\n", x, y);
+    translate(&obj, p);
+  }
 }
 
 int main(int argc, char **argv)
@@ -167,13 +276,16 @@ int main(int argc, char **argv)
   glutInitWindowPosition(GLUT_SCREEN_WIDTH/2, GLUT_SCREEN_HEIGHT/2);
   glutInitWindowSize(width, height);
   glutCreateWindow("Tarefa 2");
+  glLoadIdentity();
   glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
   /** Passo 2: Registra callbacks da OpenGl */
   glutDisplayFunc(displayCallback);
   glutReshapeFunc(reshapeCallback);
   glutMouseFunc(mouseCallback);
+  glutKeyboardFunc(keybordCallback);
 
+  obj.type = -1;
   /** Passo 3: Executa o programa */
   glutMainLoop();
   return 0;
