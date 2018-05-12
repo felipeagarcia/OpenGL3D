@@ -5,10 +5,12 @@
 #include <iostream>
 #include <GL/glut.h>
 #include <stdio.h>
+#include <math.h>
 
 int width = 500;
 int height = 500;
-
+float prev_angle = 0;
+int type = 0, create = 1;
 
 typedef struct Point{
   GLfloat x;
@@ -140,7 +142,15 @@ void translate(Object *object, Point dest){
   (*object).center.y += dy;
   (*object).center.z += dz;
   glClear(GL_COLOR_BUFFER_BIT);
+  glPushMatrix();
+  glLoadIdentity();
+  gluLookAt(2.0, 2.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluPerspective(65.0, (GLfloat) width/(GLfloat) height, 1.0, 20.0);
   drawWCAxes();
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
   object->type == 0? drawCube(object->points) : drawPiramid(object->points);
 }
 
@@ -157,12 +167,50 @@ void scale(Object *object, GLfloat factor){
   }
   translate(object, p);
   glClear(GL_COLOR_BUFFER_BIT);
+  glPushMatrix();
+  glLoadIdentity();
+  gluLookAt(2.0, 2.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluPerspective(65.0, (GLfloat) width/(GLfloat) height, 1.0, 20.0);
   drawWCAxes();
+  glMatrixMode(GL_MODELVIEW);
+  glPopMatrix();
   object->type == 0? drawCube(object->points) : drawPiramid(object->points);
 }
 
-void rotate(Object *object, GLfloat angle){
-  
+void rotate(Object *object, GLfloat angle, int x, int y, int z){
+  float M[4][4];
+  M[0][0] = x*x*(1 - cos(angle)) + cos(angle);
+  M[0][1] = x*y*(1 - cos(angle)) - z*sin(angle);
+  M[0][2] = x*z*(1 - cos(angle)) + y*sin(angle);
+  M[1][0] = y*x*(1 - cos(angle)) + z*sin(angle);
+  M[1][1] = y*y*(1 - cos(angle)) + cos(angle);
+  M[1][2] = y*z*(1 - cos(angle)) - x*sin(angle);
+  M[2][0] = z*x*(1 - cos(angle)) - y*sin(angle);
+  M[2][1] = z*y*(1 - cos(angle)) + x*sin(angle);
+  M[2][2] = z*z*(1 - cos(angle)) + cos(angle);
+  M[0][3] = M[1][3] = M[2][3] = M[3][0] = M[3][1] = M[3][2] = 0;
+  M[3][3] = 1;
+  float m[16];
+  for(int i = 0; i < 4; i++){
+  	for(int j = 0; j < 4; j++){
+  		m[i*4 + j] = M[i][j];
+  	}
+  }
+  glClear(GL_COLOR_BUFFER_BIT);
+  glPushMatrix();
+  glLoadIdentity();
+  gluLookAt(2.0, 2.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+  glMatrixMode(GL_PROJECTION);
+  glLoadIdentity();
+  gluPerspective(65.0, (GLfloat) width/(GLfloat) height, 1.0, 20.0);
+  drawWCAxes();
+  glPopMatrix();
+  glMatrixMode(GL_MODELVIEW);
+  glMultMatrixf(m);
+  object->type == 0? drawCube(object->points) : drawPiramid(object->points);
+  glFlush();
 }
 
 /**
@@ -179,7 +227,7 @@ void displayCallback()
 }
 
 /**
- * @desc Fun��o de callback para reshape.
+ * @desc Funcao de callback para reshape.
  * @param {int} w Nova largura da janela.
  * @param {int} h Nova altura da janela.
  */
@@ -196,7 +244,7 @@ void reshapeCallback(int w, int h)
 }
 
 void mouseCallback(GLint button, GLint state, GLint x, GLint y){
-  if(button == GLUT_LEFT_BUTTON){
+  if(button == GLUT_LEFT_BUTTON && type == 0 && create == 1){
     Point *p = (Point*)malloc(8*sizeof(Point));
     int i, x_sign = 1, y_sign = 1, z_sign = 1;
     for(i = 0; i < 8; i++){
@@ -221,10 +269,18 @@ void mouseCallback(GLint button, GLint state, GLint x, GLint y){
     obj.num_points = 8;
     obj.center.x = obj.center.y = obj.center.z = 0;
     glClear(GL_COLOR_BUFFER_BIT);
-    drawWCAxes();
-    drawCube(p);
+	  glLoadIdentity();
+	  gluLookAt(2.0, 2.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+	  glMatrixMode(GL_PROJECTION);
+	  glLoadIdentity();
+	  gluPerspective(65.0, (GLfloat) width/(GLfloat) height, 1.0, 20.0);
+	  drawWCAxes();
+	   drawCube(p);
+	  glMatrixMode(GL_MODELVIEW);
+	  create = 0;
+   
   }
-    else if(button == GLUT_RIGHT_BUTTON){
+    else if(button == GLUT_LEFT_BUTTON && type == 1 && create == 1){
       Point *p = (Point*)malloc(5 * sizeof(Point));
       int i, x_sign = 1, y_sign = 1;
       for(i = 0; i < 4; i++){
@@ -246,8 +302,23 @@ void mouseCallback(GLint button, GLint state, GLint x, GLint y){
     obj.num_points = 5;
     obj.center.x = obj.center.y = obj.center.z = 0;
     glClear(GL_COLOR_BUFFER_BIT);
-    drawWCAxes();
-    drawPiramid(p);
+	  glLoadIdentity();
+	  gluLookAt(2.0, 2.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+	  glMatrixMode(GL_PROJECTION);
+	  glLoadIdentity();
+	  gluPerspective(65.0, (GLfloat) width/(GLfloat) height, 1.0, 20.0);
+	  drawWCAxes();
+	  drawPiramid(p);;
+	  glMatrixMode(GL_MODELVIEW);
+	  create = 0;
+    
+  }else if(create == 0){
+  	Point p;
+    p.x = (GLfloat)x/100.0f - 2.5f;
+    p.y = 2.5f - (GLfloat)y/100.0f;
+    p.z = 0;
+    printf("Translated to (%d,%d,0)\n", x, y);
+    translate(&obj, p);
   }
 
 }
@@ -258,15 +329,50 @@ void keybordCallback(GLubyte key, GLint x, GLint y){
     scale(&obj, 1.1f);
   else if((GLint)key == 45 && obj.type != -1)
     scale(&obj, 1.0f/1.1f);
-  else if((GLint)key == 116 && obj.type != -1){
-    Point p;
-    p.x = (GLfloat)x/100.0f;
-    p.y = (GLfloat)y/100.0f;
-    p.z = 0;
-    printf("Translated to (%d,%d,0)\n", x, y);
-    translate(&obj, p);
+else if((GLint)key == 120 && obj.type != -1){
+  	rotate(&obj, prev_angle + M_PI/6, 1, 0, 0); // rotate around x
+  	prev_angle = prev_angle + M_PI/6;
+  }else if((GLint)key == 88 && obj.type != -1){
+  	rotate(&obj, prev_angle - M_PI/6, 1, 0, 0); // rotate around x
+  	prev_angle = prev_angle - M_PI/6;
+  }else if((GLint)key == 121 && obj.type != -1){
+  	rotate(&obj, prev_angle + M_PI/6, 0, 1, 0); // rotate around y
+  	prev_angle = prev_angle + M_PI/6;
+  }else if((GLint)key == 89 && obj.type != -1){
+  	rotate(&obj, prev_angle - M_PI/6, 0, 1, 0); // rotate around y
+  	prev_angle = prev_angle - M_PI/6;
+  }else if((GLint)key == 122 && obj.type != -1){
+  	rotate(&obj, prev_angle + M_PI/6, 0, 0, 1); // rotate around z
+  	prev_angle = prev_angle + M_PI/6;
+  }else if((GLint)key == 90 && obj.type != -1){
+  	rotate(&obj, prev_angle - M_PI/6, 0, 0, 1); // rotate around z
+  	prev_angle = prev_angle - M_PI/6;
   }
 }
+
+void menu_test(GLint item_number)
+{
+  std::cout<<"Item "<<item_number<<"\n";
+  type = item_number - 1;
+  create = 1;
+  glutPostRedisplay();
+}
+
+void test_create_menu()
+{
+  GLint submenu_id = glutCreateMenu(menu_test);
+  glutAddMenuEntry("Subitem 1", 4);
+  glutAddMenuEntry("Subitem 2", 5);
+  glutAddMenuEntry("Subitem 3", 6);  
+  
+  GLint menu_id = glutCreateMenu(menu_test);  
+  glutAddMenuEntry("Cube", 1);
+  glutAddMenuEntry("Pyramid", 2);
+  glutAddSubMenu("Item 3", submenu_id);  
+  
+  glutAttachMenu(GLUT_RIGHT_BUTTON);
+}
+
 
 int main(int argc, char **argv)
 {
@@ -277,14 +383,19 @@ int main(int argc, char **argv)
   glutInitWindowSize(width, height);
   glutCreateWindow("Tarefa 2");
   glLoadIdentity();
-  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
 
+  glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
   /** Passo 2: Registra callbacks da OpenGl */
   glutDisplayFunc(displayCallback);
   glutReshapeFunc(reshapeCallback);
   glutMouseFunc(mouseCallback);
   glutKeyboardFunc(keybordCallback);
-
+  test_create_menu();
+  glutRemoveMenuItem(0);
+  glutRemoveMenuItem(3);
+  glutRemoveMenuItem(6);
+  glutRemoveMenuItem(7);
+  glutRemoveMenuItem(8);
   obj.type = -1;
   /** Passo 3: Executa o programa */
   glutMainLoop();
