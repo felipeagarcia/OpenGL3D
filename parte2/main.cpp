@@ -237,11 +237,21 @@ void LookAt(GLfloat ve_x, GLfloat ve_y, GLfloat ve_z,
   GLfloat f_z = (ve_z - vt_z)/calcNorm(ve_x, ve_y, ve_z, vt_x, vt_y, vt_z);
   GLfloat l_x, l_y, l_z, u_x, u_y, u_z;
   vectorProduct(up_x, up_y, up_z, f_x, f_y, f_z, &l_x, &l_y, &l_z);
-  l_x = l_x / calcNorm(l_x,l_y,l_z,0,0,0);
-  l_y = l_y / calcNorm(l_x,l_y,l_z,0,0,0);
-  l_z = l_z / calcNorm(l_x,l_y,l_z,0,0,0);
+  GLfloat x = l_x,y = l_y, z = l_z;
+  l_x = l_x / calcNorm(x, y, z, 0, 0, 0);
+  l_y = l_y / calcNorm(x, y, z, 0, 0, 0);
+  l_z = l_z / calcNorm(x, y, z, 0, 0, 0);
   vectorProduct(f_x, f_y, f_z, l_x, l_y, l_z, &u_x, &u_y, &u_z);
-  //TODO: translate, rotate
+  GLfloat T[16] = {1,0,0,-ve_x,
+                   0,1,0,-ve_y,
+                   0,0,1,-ve_z,
+                   0,0,0,1};
+  GLfloat R[16] = {l_x,l_y,l_z,0,
+                   u_x,u_y,u_z,0,
+                   f_x,f_y,f_z,0,
+                   0,0,0,1};
+  glMultMatrixf(R);
+  glTranslated(-ve_x,-ve_y,-ve_z);
 }
 
 
@@ -253,7 +263,7 @@ void displayCallback()
   glClear(GL_COLOR_BUFFER_BIT);
   glColor3f(1.0f, 0.0f, 0.0f);
   glLoadIdentity();
-  gluLookAt(2.0, 2.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
+  LookAt(2.0, 2.0, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
   drawWCAxes();
   glFlush();
 }
@@ -351,6 +361,7 @@ void mouseCallback(GLint button, GLint state, GLint x, GLint y){
     p.z = 0;
     printf("Translated to (%d,%d,0)\n", x, y);
     translate(&obj, p);
+    LookAt(p.x, p.y, 10.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0);
   }
 
 }
@@ -397,7 +408,7 @@ void test_create_menu()
   glutAddMenuEntry("Subitem 2", 5);
   glutAddMenuEntry("Subitem 3", 6);  
   
-  GLint menu_id = glutCreateMenu(menu_test);  
+  glutCreateMenu(menu_test);  
   glutAddMenuEntry("Cube", 1);
   glutAddMenuEntry("Pyramid", 2);
   glutAddSubMenu("Item 3", submenu_id);  
