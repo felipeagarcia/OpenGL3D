@@ -9,7 +9,7 @@
 
 int width = 500;
 int height = 500;
-float prev_angle = 0;
+float prev_angle[3] = {0,0,0};
 int type = 0, create = 1;
 
 typedef struct Point{
@@ -330,23 +330,23 @@ void keybordCallback(GLubyte key, GLint x, GLint y){
   else if((GLint)key == 45 && obj.type != -1)
     scale(&obj, 1.0f/1.1f);
 else if((GLint)key == 120 && obj.type != -1){
-  	rotate(&obj, prev_angle + M_PI/6, 1, 0, 0); // rotate around x
-  	prev_angle = prev_angle + M_PI/6;
+  	rotate(&obj, prev_angle[0] + M_PI/6, 1, 0, 0); // rotate around x
+  	prev_angle[0] = prev_angle[0] + M_PI/6;
   }else if((GLint)key == 88 && obj.type != -1){
-  	rotate(&obj, prev_angle - M_PI/6, 1, 0, 0); // rotate around x
-  	prev_angle = prev_angle - M_PI/6;
+  	rotate(&obj, prev_angle[0] - M_PI/6, 1, 0, 0); // rotate around x
+  	prev_angle[0] = prev_angle[0] - M_PI/6;
   }else if((GLint)key == 121 && obj.type != -1){
-  	rotate(&obj, prev_angle + M_PI/6, 0, 1, 0); // rotate around y
-  	prev_angle = prev_angle + M_PI/6;
+  	rotate(&obj, prev_angle[1] + M_PI/6, 0, 1, 0); // rotate around y
+  	prev_angle[1] = prev_angle[1] + M_PI/6;
   }else if((GLint)key == 89 && obj.type != -1){
-  	rotate(&obj, prev_angle - M_PI/6, 0, 1, 0); // rotate around y
-  	prev_angle = prev_angle - M_PI/6;
+  	rotate(&obj, prev_angle[1] - M_PI/6, 0, 1, 0); // rotate around y
+  	prev_angle[1] = prev_angle[1] - M_PI/6;
   }else if((GLint)key == 122 && obj.type != -1){
-  	rotate(&obj, prev_angle + M_PI/6, 0, 0, 1); // rotate around z
-  	prev_angle = prev_angle + M_PI/6;
+  	rotate(&obj, prev_angle[2] + M_PI/6, 0, 0, 1); // rotate around z
+  	prev_angle[2] = prev_angle[2] + M_PI/6;
   }else if((GLint)key == 90 && obj.type != -1){
-  	rotate(&obj, prev_angle - M_PI/6, 0, 0, 1); // rotate around z
-  	prev_angle = prev_angle - M_PI/6;
+  	rotate(&obj, prev_angle[2] - M_PI/6, 0, 0, 1); // rotate around z
+  	prev_angle[2] = prev_angle[2] - M_PI/6;
   }
 }
 
@@ -365,7 +365,7 @@ void test_create_menu()
   glutAddMenuEntry("Subitem 2", 5);
   glutAddMenuEntry("Subitem 3", 6);  
   
-  GLint menu_id = glutCreateMenu(menu_test);  
+  glutCreateMenu(menu_test);  
   glutAddMenuEntry("Cube", 1);
   glutAddMenuEntry("Pyramid", 2);
   glutAddSubMenu("Item 3", submenu_id);  
